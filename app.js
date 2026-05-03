@@ -46,6 +46,7 @@ let state = {
   query: '',
   status: 'active',
   sort: 'newest',
+  sync: 'local',
 };
 
 const els = {
@@ -76,6 +77,67 @@ function loadMemos() {
 
 function saveMemos() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.memos));
+}
+
+async function loadRemoteMemos() {
+  try {
+    const response = await fetch('/api/memos');
+    if (!response.ok) throw new Error('Remote store unavailable');
+    const data = await response.json();
+    if (Array.isArray(data.memos) && data.memos.length > 0) {
+      state.memos = data.memos;
+      saveMemos();
+    }
+    state.sync = 'supabase';
+  } catch {
+    state.sync = 'local';
+  }
+  render();
+}
+
+async function saveRemoteMemo(memo) {
+  try {
+    const response = await fetch('/api/memos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memo }),
+    });
+    if (!response.ok) throw new Error('Remote save failed');
+    const data = await response.json();
+    state.sync = 'supabase';
+    return data.memo || memo;
+  } catch {
+    state.sync = 'local';
+    return memo;
+  }
+}
+
+async function updateRemoteMemo(id, patch) {
+  try {
+    const response = await fetch('/api/memos', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...patch }),
+    });
+    if (!response.ok) throw new Error('Remote update failed');
+    state.sync = 'supabase';
+  } catch {
+    state.sync = 'local';
+  }
+  render();
+}
+
+async function deleteRemoteMemo(id) {
+  try {
+    const response = await fetch(`/api/memos?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok && response.status !== 204) throw new Error('Remote delete failed');
+    state.sync = 'supabase';
+  } catch {
+    state.sync = 'local';
+  }
+  render();
 }
 
 function includesAny(text, words) {
@@ -255,11 +317,13 @@ function renderMemos() {
       memo.done = !memo.done;
       saveMemos();
       render();
+      updateRemoteMemo(memo.id, { done: memo.done });
     });
     item.querySelector('.delete-button').addEventListener('click', () => {
       state.memos = state.memos.filter((itemMemo) => itemMemo.id !== memo.id);
       saveMemos();
       render();
+      deleteRemoteMemo(memo.id);
     });
 
     els.memoList.append(item);
@@ -283,6 +347,7 @@ function renderStats() {
     ['完了', done],
     ['高優先度', high],
     [topCategory?.label || '最多カテゴリ', topCategory?.count || 0],
+    ['Sync', state.sync === 'supabase' ? 'DB' : 'Local'],
   ].map(([label, value]) => `<div class="stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
 }
 
@@ -327,8 +392,9 @@ els.form.addEventListener('submit', (event) => {
   submitButton.textContent = '分類中';
 
   createMemo(text, els.source.value)
-    .then((memo) => {
-      state.memos.unshift(memo);
+    .then(async (memo) => {
+      const savedMemo = await saveRemoteMemo(memo);
+      state.memos.unshift(savedMemo);
       els.input.value = '';
       updatePreview();
       saveMemos();
@@ -354,9 +420,11 @@ els.sort.addEventListener('change', () => {
   render();
 });
 els.clearDoneBtn.addEventListener('click', () => {
+  const doneIds = state.memos.filter((memo) => memo.done).map((memo) => memo.id);
   state.memos = state.memos.filter((memo) => !memo.done);
   saveMemos();
   render();
+  doneIds.forEach((id) => deleteRemoteMemo(id));
 });
 els.exportBtn.addEventListener('click', () => {
   const blob = new Blob([JSON.stringify(state.memos, null, 2)], { type: 'application/json' });
@@ -402,3 +470,4 @@ if (state.memos.length === 0) {
 }
 
 render();
+loadRemoteMemos();
