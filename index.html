@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Auto Memo Inbox</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="カテゴリ">
+        <div class="brand">
+          <div class="brand-mark">A</div>
+          <div>
+            <h1>Auto Memo Inbox</h1>
+            <p>LINE/Gmail連携予定のAIメモ受信箱</p>
+          </div>
+        </div>
+
+        <nav class="nav" id="categoryNav"></nav>
+
+        <section class="connector-panel">
+          <h2>Inputs</h2>
+          <div class="connector active">
+            <span class="dot"></span>
+            <div>
+              <strong>Manual</strong>
+              <small>Now available</small>
+            </div>
+          </div>
+          <div class="connector">
+            <span class="dot muted"></span>
+            <div>
+              <strong>LINE Bot</strong>
+              <small>Webhook ready later</small>
+            </div>
+          </div>
+          <div class="connector">
+            <span class="dot muted"></span>
+            <div>
+              <strong>Gmail</strong>
+              <small>Label sync ready later</small>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Thought Capture</p>
+            <h2>思いつきを、あとで動かせるメモに変える</h2>
+          </div>
+          <div class="actions">
+            <button class="icon-button" id="exportBtn" title="JSONを書き出す" aria-label="JSONを書き出す">↓</button>
+            <button class="icon-button" id="clearDoneBtn" title="完了済みを削除" aria-label="完了済みを削除">×</button>
+          </div>
+        </header>
+
+        <section class="capture-band" aria-label="メモ入力">
+          <form id="memoForm" class="memo-form">
+            <textarea id="memoInput" rows="3" placeholder="例: 週末にベランダ掃除したい / LINEでメモを自動保存するアプリを作りたい"></textarea>
+            <div class="form-row">
+              <select id="sourceInput" aria-label="入力元">
+                <option value="manual">手入力</option>
+                <option value="line">LINE</option>
+                <option value="gmail">Gmail</option>
+              </select>
+              <button type="submit">メモ化</button>
+            </div>
+          </form>
+          <div class="ai-preview" id="aiPreview">
+            <span>AI分類プレビュー</span>
+            <strong>入力するとカテゴリ、行動タイプ、優先度を推定します</strong>
+          </div>
+        </section>
+
+        <section class="toolbar" aria-label="表示設定">
+          <label class="search">
+            <span>検索</span>
+            <input id="searchInput" type="search" placeholder="キーワードで絞り込み" />
+          </label>
+          <label>
+            <span>状態</span>
+            <select id="statusFilter">
+              <option value="active">未完了</option>
+              <option value="all">すべて</option>
+              <option value="done">完了済み</option>
+            </select>
+          </label>
+          <label>
+            <span>並び順</span>
+            <select id="sortInput">
+              <option value="newest">新しい順</option>
+              <option value="priority">優先度順</option>
+              <option value="category">カテゴリ順</option>
+            </select>
+          </label>
+        </section>
+
+        <section class="content-grid">
+          <div class="memo-list-wrap">
+            <div class="section-heading">
+              <h3>メモ</h3>
+              <span id="countLabel">0件</span>
+            </div>
+            <div class="memo-list" id="memoList"></div>
+          </div>
+
+          <aside class="insights" aria-label="サマリー">
+            <div class="section-heading">
+              <h3>今日の整理</h3>
+              <span id="todayLabel"></span>
+            </div>
+            <div class="stats" id="stats"></div>
+            <div class="weekly">
+              <h3>連携ロードマップ</h3>
+              <ol>
+                <li>LINE Messaging APIのWebhookを受ける</li>
+                <li>Gmailの特定ラベルを定期取得する</li>
+                <li>分類をOpenAI APIに差し替える</li>
+              </ol>
+            </div>
+          </aside>
+        </section>
+      </section>
+    </main>
+
+    <template id="memoTemplate">
+      <article class="memo-item">
+        <button class="check-button" title="完了切替" aria-label="完了切替"></button>
+        <div class="memo-body">
+          <div class="memo-meta">
+            <span class="category-pill"></span>
+            <span class="priority-pill"></span>
+            <span class="source-pill"></span>
+            <time></time>
+          </div>
+          <h4></h4>
+          <p></p>
+          <div class="memo-tags"></div>
+        </div>
+        <button class="delete-button" title="削除" aria-label="削除">×</button>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
