@@ -1,0 +1,9 @@
+{
+  "name": "auto-memo-inbox",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check app.js && node --check api/classify.js"
+  }
+}

@@ -116,8 +116,34 @@ function makeTitle(text) {
   return `${cleaned.slice(0, 28)}...`;
 }
 
-function createMemo(text, source) {
-  const ai = classify(text);
+async function classifyWithAi(text, source) {
+  try {
+    const response = await fetch('/api/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, source }),
+    });
+    if (!response.ok) throw new Error('Remote classifier unavailable');
+    const data = await response.json();
+    return {
+      title: data.title || makeTitle(text),
+      category: categories.some((category) => category.id === data.category) ? data.category : 'other',
+      action: data.action || 'メモ',
+      priority: ['high', 'medium', 'low'].includes(data.priority) ? data.priority : 'low',
+      dueHint: data.dueHint || null,
+      tags: Array.isArray(data.tags) ? data.tags.slice(0, 4) : [],
+      classifier: 'openai',
+    };
+  } catch {
+    return {
+      ...classify(text),
+      classifier: 'local',
+    };
+  }
+}
+
+async function createMemo(text, source) {
+  const ai = await classifyWithAi(text, source);
   return {
     id: crypto.randomUUID(),
     raw: text,
@@ -296,11 +322,22 @@ els.form.addEventListener('submit', (event) => {
   const text = els.input.value.trim();
   if (!text) return;
 
-  state.memos.unshift(createMemo(text, els.source.value));
-  els.input.value = '';
-  updatePreview();
-  saveMemos();
-  render();
+  const submitButton = els.form.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  submitButton.textContent = '分類中';
+
+  createMemo(text, els.source.value)
+    .then((memo) => {
+      state.memos.unshift(memo);
+      els.input.value = '';
+      updatePreview();
+      saveMemos();
+      render();
+    })
+    .finally(() => {
+      submitButton.disabled = false;
+      submitButton.textContent = 'メモ化';
+    });
 });
 
 els.input.addEventListener('input', updatePreview);
@@ -333,9 +370,33 @@ els.exportBtn.addEventListener('click', () => {
 
 if (state.memos.length === 0) {
   state.memos = [
-    createMemo('LINEで送ったメッセージを自動でメモ化したい', 'line'),
-    createMemo('週末にベランダ掃除したい', 'manual'),
-    createMemo('Gmailの特定ラベルを定期的に取り込む方法を調べる', 'gmail'),
+    {
+      id: crypto.randomUUID(),
+      raw: 'LINEで送ったメッセージを自動でメモ化したい',
+      source: 'line',
+      done: false,
+      createdAt: new Date().toISOString(),
+      ...classify('LINEで送ったメッセージを自動でメモ化したい'),
+      classifier: 'local',
+    },
+    {
+      id: crypto.randomUUID(),
+      raw: '週末にベランダ掃除したい',
+      source: 'manual',
+      done: false,
+      createdAt: new Date().toISOString(),
+      ...classify('週末にベランダ掃除したい'),
+      classifier: 'local',
+    },
+    {
+      id: crypto.randomUUID(),
+      raw: 'Gmailの特定ラベルを定期的に取り込む方法を調べる',
+      source: 'gmail',
+      done: false,
+      createdAt: new Date().toISOString(),
+      ...classify('Gmailの特定ラベルを定期的に取り込む方法を調べる'),
+      classifier: 'local',
+    },
   ];
   saveMemos();
 }
