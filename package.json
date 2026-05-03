@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check app.js && node --check api/classify.js && node --check api/memos.js"
+    "check": "node --check app.js && node --check api/classify.js && node --check api/memos.js && node --check api/inbound/gmail.js && node --check scripts/gmail-apps-script.js"
   }
 }
