@@ -61,6 +61,7 @@ const els = {
   status: document.querySelector('#statusFilter'),
   sort: document.querySelector('#sortInput'),
   stats: document.querySelector('#stats'),
+  indexList: document.querySelector('#indexList'),
   todayLabel: document.querySelector('#todayLabel'),
   exportBtn: document.querySelector('#exportBtn'),
   clearDoneBtn: document.querySelector('#clearDoneBtn'),
@@ -351,6 +352,59 @@ function renderStats() {
   ].map(([label, value]) => `<div class="stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
 }
 
+function buildMemoIndex() {
+  const index = new Map();
+
+  state.memos
+    .filter((memo) => state.status === 'all' || (state.status === 'done' ? memo.done : !memo.done))
+    .forEach((memo) => {
+      const terms = [
+        getCategoryLabel(memo.category),
+        memo.action,
+        memo.dueHint,
+        ...(memo.tags || []),
+      ].filter(Boolean);
+
+      terms.forEach((term) => {
+        const key = String(term).trim();
+        if (!key) return;
+        const item = index.get(key) || { label: key, count: 0 };
+        item.count += 1;
+        index.set(key, item);
+      });
+    });
+
+  return [...index.values()]
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'ja'))
+    .slice(0, 12);
+}
+
+function renderIndex() {
+  const items = buildMemoIndex();
+  els.indexList.innerHTML = '';
+
+  if (items.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'index-empty';
+    empty.textContent = '索引にできるメモがまだありません。';
+    els.indexList.append(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = state.query.trim() === item.label ? 'active' : '';
+    button.innerHTML = `<span>${item.label}</span><strong>${item.count}</strong>`;
+    button.addEventListener('click', () => {
+      state.query = item.label;
+      els.search.value = item.label;
+      render();
+    });
+    els.indexList.append(button);
+  });
+}
+
 function formatDate(value) {
   return new Intl.DateTimeFormat('ja-JP', {
     month: 'numeric',
@@ -379,6 +433,7 @@ function render() {
   renderNav();
   renderMemos();
   renderStats();
+  renderIndex();
   els.todayLabel.textContent = new Intl.DateTimeFormat('ja-JP', { month: 'long', day: 'numeric' }).format(new Date());
 }
 

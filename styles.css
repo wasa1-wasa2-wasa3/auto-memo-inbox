@@ -318,6 +318,10 @@ select {
   font-size: 12px;
 }
 
+.section-heading.compact {
+  margin-bottom: 10px;
+}
+
 .memo-list {
   display: grid;
   gap: 10px;
@@ -472,6 +476,62 @@ time {
 .stat span {
   color: var(--muted);
   font-size: 12px;
+}
+
+.memo-index {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.index-list {
+  display: grid;
+  gap: 8px;
+}
+
+.index-list button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: #f7f9fc;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.index-list button:hover,
+.index-list button.active {
+  background: #e9f3f7;
+  color: var(--accent);
+}
+
+.index-list span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.index-list strong {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: #eef1f6;
+  color: #59667a;
+  font-size: 12px;
+}
+
+.index-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .weekly {
