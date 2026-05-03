@@ -6,13 +6,16 @@ function getSupabaseConfig() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
+  const headers = {
+    apikey: key,
+    'Content-Type': 'application/json',
+  };
+  if (!key.startsWith('sb_secret_')) {
+    headers.Authorization = `Bearer ${key}`;
+  }
   return {
     endpoint: `${url.replace(/\/$/, '')}/rest/v1/memos`,
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
+    headers,
   };
 }
 
